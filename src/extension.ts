@@ -309,17 +309,61 @@ function normalizeEncoding(enc: string | undefined): string {
   if (e === "utf8") e = "utf-8";
   if (e === "utf16" || e === "utf-16") e = "utf-16le";
 
-  // 代表的エイリアスマップ
+  // 代表的エイリアスマップ（JIS/簡体/ハングル以外も網羅）
   const map: Record<string, string> = {
-    "shift-jis": "shift_jis",
-    "sjis": "shift_jis",
-    "ms932": "shift_jis",
-    "eucjp": "euc-jp",
-    "euckr": "euc-kr",
-    "ks_c_5601-1987": "euc-kr",
-    "iso-2022-kr": "euc-kr",
-    "gb2312": "gbk",
-    "gb_2312": "gbk"
+    /* --- Japanese / Chinese / Korean ---------------------------- */
+    "shift-jis":"shift_jis","sjis":"shift_jis","ms932":"shift_jis","cp932":"shift_jis",
+    "eucjp":"euc-jp",
+    "euckr":"euc-kr","euc_kr":"euc-kr","ks_c_5601-1987":"euc-kr","iso-2022-kr":"euc-kr",
+    "gb2312":"gbk","gb_2312":"gbk","gbk":"gbk","gb18030":"gb18030",
+    "big5hkscs":"big5","big5-hkscs":"big5","cn-big5":"big5",
+
+    /* --- Western European -------------------------------------- */
+    "latin1":"iso-8859-1","iso8859-1":"iso-8859-1",
+    "windows-1252":"iso-8859-1","win1252":"iso-8859-1","cp1252":"iso-8859-1",
+
+    /* --- Central European -------------------------------------- */
+    "latin2":"windows-1250","iso8859-2":"windows-1250","iso-8859-2":"windows-1250",
+    "windows-1250":"windows-1250","win1250":"windows-1250","cp1250":"windows-1250",
+
+    /* --- Turkish ----------------------------------------------- */
+    "latin5":"windows-1254","iso8859-9":"windows-1254","iso-8859-9":"windows-1254",
+    "windows-1254":"windows-1254","win1254":"windows-1254","cp1254":"windows-1254",
+
+    /* --- Cyrillic ---------------------------------------------- */
+    "cyrillic":"windows-1251","iso8859-5":"windows-1251","iso-8859-5":"windows-1251",
+    "windows-1251":"windows-1251","win1251":"windows-1251","cp1251":"windows-1251",
+    "koi8r":"koi8-r","koi8-r":"koi8-r","koi8u":"koi8-u","koi8-u":"koi8-u",
+
+    /* --- Greek -------------------------------------------------- */
+    "iso8859-7":"windows-1253","iso-8859-7":"windows-1253",
+    "windows-1253":"windows-1253","win1253":"windows-1253","cp1253":"windows-1253",
+
+    /* --- Arabic ------------------------------------------------- */
+    "iso8859-6":"windows-1256","iso-8859-6":"windows-1256",
+    "windows-1256":"windows-1256","win1256":"windows-1256","cp1256":"windows-1256",
+
+    /* --- Hebrew ------------------------------------------------- */
+    "iso8859-8":"windows-1255","iso-8859-8":"windows-1255",
+    "windows-1255":"windows-1255","win1255":"windows-1255","cp1255":"windows-1255",
+
+    /* --- Baltic ------------------------------------------------- */
+    "latin4":"windows-1257","iso8859-4":"windows-1257","iso-8859-4":"windows-1257",
+    "iso8859-13":"windows-1257","iso-8859-13":"windows-1257",
+    "windows-1257":"windows-1257","win1257":"windows-1257","cp1257":"windows-1257",
+
+    /* --- Thai --------------------------------------------------- */
+    "iso8859-11":"windows-874","iso-8859-11":"windows-874",
+    "windows-874":"windows-874","win874":"windows-874","cp874":"windows-874","tis-620":"windows-874",
+
+    /* --- Vietnamese -------------------------------------------- */
+    "windows-1258":"windows-1258","win1258":"windows-1258","cp1258":"windows-1258",
+
+    /* --- Western Extended -------------------------------------- */
+    "iso8859-15":"iso-8859-15","iso-8859-15":"iso-8859-15","latin9":"iso-8859-15",
+
+    /* --- Mac ---------------------------------------------------- */
+    "mac":"macroman","macintosh":"macroman","macroman":"macroman"
   };
   return map[e] ?? e;
 }
