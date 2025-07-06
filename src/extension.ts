@@ -31,12 +31,10 @@ export function activate(context: vscode.ExtensionContext) {
 					if (tab.input instanceof vscode.TabInputText) {
 						const filePath = tab.input.uri.fsPath;
 						if (isTextFile(filePath)) {
-							const fileContent = detectAndDecodeFile(filePath);
-							if (fileContent === null) {
-								continue; // Skip if decoding failed
-							}
+							const document = await vscode.workspace.openTextDocument(filePath);
+							const fileContent = document.getText();
 							const relativeFilePath = vscode.workspace.asRelativePath(filePath);
-							content += `### ${relativeFilePath}\n\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+							content += `### ${relativeFilePath}\n\n```\n${fileContent}\n```\n\n`;
 							copiedFiles.push(relativeFilePath);
 						}
 					}
@@ -65,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
 				if (isTextFile(filePath)) {
 					const fileContent = document.getText();
 					const relativeFilePath = vscode.workspace.asRelativePath(filePath);
-					const content = `### ${relativeFilePath}\n\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+					const content = `### ${relativeFilePath}\n\n```\n${fileContent}\n```\n\n`;
 					const projectName = vscode.workspace.name || "Untitled";
 					const outputContent = `# ${projectName}\n\n## Copied Files\n\n  - ${relativeFilePath}\n\n## File Contents\n\n${content}`;
 					vscode.env.clipboard.writeText(outputContent);
@@ -135,16 +133,7 @@ export function activate(context: vscode.ExtensionContext) {
 						const fileListText = allFiles.map(f => `- ${f}`).join("\n");
 						const relativeStartFile = path.relative(rootPath, startFile);
 
-						const prompt = `
-You are given a project file list and a starting file.
-The project files are:
-${fileListText}
-
-The starting file is: ${relativeStartFile}
-
-Identify all files that are directly referenced or related to the starting file (depth=1).
-Return only their relative paths, one per line, without explanations.
-`;
+						const prompt = `\nYou are given a project file list and a starting file.\nThe project files are:\n${fileListText}\n\nThe starting file is: ${relativeStartFile}\n\nIdentify all files that are directly referenced or related to the starting file (depth=1).\nReturn only their relative paths, one per line, without explanations.\n`;
 
 						const response = await fetch("https://api.openai.com/v1/chat/completions", {
 							method: "POST",
@@ -247,7 +236,7 @@ export function generateDirectoryTree(dir: string, indent: string, includeFileCo
 							if (fileContent === null) {
 					continue; // Skip if decoding failed
 				}
-			fileContents += `### ${file}\n\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
+			fileContents += `### ${file}\n\n```\n${fileContent}\n```\n\n`;
 		}
 	}
 
@@ -306,7 +295,7 @@ export function isTextFile(filePath: string): boolean {
 }
 
 export function detectAndDecodeFile(filePath: string): string | null {
-	try {
+		try {
 		const buffer = fs.readFileSync(filePath);
 		const detected = jschardet.detect(buffer);
 
