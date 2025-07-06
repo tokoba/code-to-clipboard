@@ -15,8 +15,8 @@ const outputChannel = vscode.window.createOutputChannel("CodeToClipboard");
 // 汎用候補エンコーディング（優先度を中国語系→日本語系の順に調整）
 const COMMON_ENCODINGS = [
   "utf-8",
-  "gb18030", "gbk", "gb2312", "big5",       // ← 中国語系を先に
-  "shift_jis", "euc-jp",                    // ← 日本語系
+  "shift_jis", "euc-jp",                    // ← 日本語系を先に
+  "gb18030", "gbk", "gb2312", "big5",       // ← 中国語系
   "euc-kr",                                 // ← 韓国語系
   "iso-8859-1", "windows-1250", "windows-1251",
   "windows-1252", "windows-1253", "windows-1254",
