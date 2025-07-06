@@ -6,6 +6,9 @@ import { minimatch } from 'minimatch';
 import * as jschardet from 'jschardet';
 import iconv from 'iconv-lite';
 
+// コードブロック用バッククォート（再利用しやすいよう定数化）
+const CODE_BLOCK = "```";
+
 interface OpenAIChatCompletionMessage {
 	role: string;
 	content: string;
@@ -35,7 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
 							const fileContent = detectAndDecodeFile(filePath);
 							if (fileContent === null) { continue; }
 							const relativeFilePath = vscode.workspace.asRelativePath(filePath);
-							content += `### ${relativeFilePath}\n\n```\n${fileContent}\n```\n\n`;
+							content += `### ${relativeFilePath}\n\n${CODE_BLOCK}\n${fileContent}\n${CODE_BLOCK}\n\n`;
 							copiedFiles.push(relativeFilePath);
 						}
 					}
@@ -64,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 					const fileContent = detectAndDecodeFile(filePath);
 					if (fileContent === null) { return; }
 					const relativeFilePath = vscode.workspace.asRelativePath(filePath);
-					const content = `### ${relativeFilePath}\n\n```\n${fileContent}\n```\n\n`;
+					const content = `### ${relativeFilePath}\n\n${CODE_BLOCK}\n${fileContent}\n${CODE_BLOCK}\n\n`;
 					const projectName = vscode.workspace.name || "Untitled";
 					const outputContent = `# ${projectName}\n\n## Copied Files\n\n  - ${relativeFilePath}\n\n## File Contents\n\n${content}`;
 					vscode.env.clipboard.writeText(outputContent);
@@ -237,7 +240,7 @@ export function generateDirectoryTree(dir: string, indent: string, includeFileCo
 							if (fileContent === null) {
 					continue; // Skip if decoding failed
 				}
-			fileContents += `### ${file}\n\n```\n${fileContent}\n```\n\n`;
+			fileContents += `### ${file}\n\n${CODE_BLOCK}\n${fileContent}\n${CODE_BLOCK}\n\n`;
 		}
 	}
 
