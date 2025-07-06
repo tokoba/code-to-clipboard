@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as childProcess from "node:child_process";
 import { minimatch } from 'minimatch';
 import * as jschardet from 'jschardet';
+import iconv from 'iconv-lite';
 
 interface OpenAIChatCompletionMessage {
 	role: string;
@@ -296,22 +297,31 @@ export function isTextFile(filePath: string): boolean {
 
 function normalizeEncoding(enc: string | undefined): string {
   if (!enc) return "utf-8";
-  switch (enc.toLowerCase()) {
-    case "shift_jis":
-    case "sjis":
-    case "ms932":
-      return "shift_jis";
-    case "gb2312":
-    case "gb_2312":
-    case "gbk":
-      return "gbk";
-    case "euc-kr":
-    case "ks_c_5601-1987":
-    case "iso-2022-kr":
-      return "euc-kr";
-    default:
-      return enc.toLowerCase();
+
+  // 前後空白除去＋小文字化
+  let e = enc.trim().toLowerCase();
+
+  // 共通的な揺らぎを統一
+  e = e.replace(/[_\s]/g, "-");          // "_" や空白 → "-"
+  if (e.startsWith("windows-")) {        // 例: windows-31j
+    e = e.replace(/^windows-/, "");
   }
+  if (e === "utf8") e = "utf-8";
+  if (e === "utf16" || e === "utf-16") e = "utf-16le";
+
+  // 代表的エイリアスマップ
+  const map: Record<string, string> = {
+    "shift-jis": "shift_jis",
+    "sjis": "shift_jis",
+    "ms932": "shift_jis",
+    "eucjp": "euc-jp",
+    "euckr": "euc-kr",
+    "ks_c_5601-1987": "euc-kr",
+    "iso-2022-kr": "euc-kr",
+    "gb2312": "gbk",
+    "gb_2312": "gbk"
+  };
+  return map[e] ?? e;
 }
 
 export function detectAndDecodeFile(filePath: string): string | null {
@@ -323,19 +333,24 @@ export function detectAndDecodeFile(filePath: string): string | null {
 			detected && detected.confidence > 0.8 ? detected.encoding : "utf-8"
 		);
 
+		// ① TextDecoder が対応している場合はそれを使用
 		try {
-			return new TextDecoder(encoding).decode(buffer);
+			return new TextDecoder(encoding as any).decode(buffer);
+		} catch {
+			/* fall-through */
+		}
+
+		// ② 非対応エンコーディングは iconv-lite にフォールバック
+		try {
+			return iconv.decode(buffer, encoding);
 		} catch (e) {
-			if (encoding !== "utf-8") {
-				try {
-					return new TextDecoder("utf-8").decode(buffer);
-				} catch (utf8Error) {
-					console.error(`Error decoding file ${filePath} as UTF-8 after failing with ${encoding}:`, utf8Error);
-					return null;
-				}
+			console.error(`Error decoding file ${filePath} with encoding ${encoding}:`, e);
+			// 最後の手段として UTF-8
+			try {
+				return iconv.decode(buffer, "utf-8");
+			} catch {
+				return null;
 			}
-			console.error(`Error decoding file ${filePath} with detected encoding ${encoding}:`, e);
-			return null;
 		}
 	} catch (error) {
 		console.error(`Error reading or decoding file ${filePath}:`, error);
