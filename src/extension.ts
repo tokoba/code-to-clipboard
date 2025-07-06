@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as childProcess from "node:child_process";
 import { minimatch } from 'minimatch';
+import * as jschardet from 'jschardet';
 
 interface OpenAIChatCompletionMessage {
 	role: string;
@@ -30,7 +31,10 @@ export function activate(context: vscode.ExtensionContext) {
 					if (tab.input instanceof vscode.TabInputText) {
 						const filePath = tab.input.uri.fsPath;
 						if (isTextFile(filePath)) {
-							const fileContent = fs.readFileSync(filePath, "utf8");
+							const fileContent = detectAndDecodeFile(filePath);
+							if (fileContent === null) {
+								continue; // Skip if decoding failed
+							}
 							const relativeFilePath = vscode.workspace.asRelativePath(filePath);
 							content += `### ${relativeFilePath}\n\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
 							copiedFiles.push(relativeFilePath);
@@ -239,7 +243,10 @@ export function generateDirectoryTree(dir: string, indent: string, includeFileCo
 			tree += generateDirectoryTree(filePath, `${indent}  `, true);
 		} else if (isTextFile(filePath)) {
 			currentLevel[fileName] = true;
-			const fileContent = fs.readFileSync(filePath, "utf8");
+			const fileContent = detectAndDecodeFile(filePath);
+							if (fileContent === null) {
+					continue; // Skip if decoding failed
+				}
 			fileContents += `### ${file}\n\n\`\`\`\n${fileContent}\n\`\`\`\n\n`;
 		}
 	}
@@ -295,6 +302,40 @@ export function isTextFile(filePath: string): boolean {
 		return true;
 	} catch (error) {
 		return false;
+	}
+}
+
+export function detectAndDecodeFile(filePath: string): string | null {
+	try {
+		const buffer = fs.readFileSync(filePath);
+		const detected = jschardet.detect(buffer);
+
+		// Use detected encoding if confidence is high, otherwise default to UTF-8
+		const encoding = detected && detected.confidence > 0.8 ? detected.encoding : "UTF-8";
+
+		// TextDecoder supports many encodings. Let's try the detected one.
+		// We need to handle potential errors if the encoding name is not recognized.
+		try {
+			// Normalize encoding name to lower case as TextDecoder is case-insensitive
+			// and jschardet might return upper-case names.
+			return new TextDecoder(encoding.toLowerCase()).decode(buffer);
+		} catch (e) {
+			// If the detected encoding is not supported or fails, fallback to UTF-8
+			if (encoding.toUpperCase() !== "UTF-8") {
+				try {
+					return new TextDecoder("utf-8").decode(buffer);
+				} catch (utf8Error) {
+					console.error(`Error decoding file ${filePath} as UTF-8 after failing with ${encoding}:`, utf8Error);
+					return null;
+				}
+			}
+			// If UTF-8 itself failed, then we can't do much.
+			console.error(`Error decoding file ${filePath} with detected encoding ${encoding}:`, e);
+			return null;
+		}
+	} catch (error) {
+		console.error(`Error reading or decoding file ${filePath}:`, error);
+		return null;
 	}
 }
 

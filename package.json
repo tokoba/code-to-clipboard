@@ -1,137 +1,139 @@
 {
-	"name": "code-to-clipboard",
-	"displayName": "code-to-clipboard",
-	"description": "Copy code to clipboard for sharing with Large Language Model",
-	"icon": "images/icon.webp",
-	"version": "0.4.0",
-	"publisher": "YuichiNakamura",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/nakamurau1/code-to-clipboard.git"
-	},
-	"engines": {
-		"vscode": "^1.87.0"
-	},
-	"categories": ["Other"],
-	"activationEvents": [],
-	"main": "./dist/extension.js",
-	"contributes": {
-		"configuration": {
-			"title": "Code to Clipboard",
-			"properties": {
-				"codeToClipboard.excludePatterns": {
-					"type": "array",
-					"default": [
-						"*.lock",
-						"yarn.lock",
-						"package-lock.json",
-						"pnpm-lock.yaml",
-						"composer.lock"
-					],
-					"description": "Glob patterns for files to exclude when copying directory code."
-				}
-			}
-		},
-		"commands": [
-			{
-				"command": "code-to-clipboard.copyCode",
-				"title": "Copy Code from All Open Tabs to Clipboard"
-			},
-			{
-				"command": "code-to-clipboard.copyCurrentTabCode",
-				"title": "Copy Code from Current Tab to Clipboard"
-			},
-			{
-				"command": "code-to-clipboard.copyDirectoryCode",
-				"title": "Copy Directory Tree&Code to Clipboard"
-			},
-			{
-				"command": "code-to-clipboard.copyDirectoryTree",
-				"title": "Copy Directory Tree to Clipboard"
-			},
-			{
-				"command": "code-to-clipboard.openRelatedFilesDepth1",
-				"title": "Open Related Files"
-			}
-		],
-		"menus": {
-			"explorer/context": [
-				{
-					"when": "explorerResourceIsFolder",
-					"command": "code-to-clipboard.copyDirectoryCode",
-					"group": "9_cutcopypaste"
-				},
-				{
-					"when": "explorerResourceIsFolder",
-					"command": "code-to-clipboard.copyDirectoryTree",
-					"group": "9_cutcopypaste"
-				}
-			],
-			"editor/title/context": [
-				{
-					"when": "resourceScheme == file",
-					"command": "code-to-clipboard.copyCode",
-					"group": "9_cutcopypaste"
-				},
-				{
-					"when": "resourceScheme == file",
-					"command": "code-to-clipboard.copyCurrentTabCode",
-					"group": "9_cutcopypaste"
-				},
-				{
-					"when": "resourceScheme == file",
-					"command": "code-to-clipboard.openRelatedFilesDepth1",
-					"group": "9_cutcopypaste"
-				}
-			],
-			"editor/context": [
-				{
-					"when": "resourceScheme == file",
-					"command": "code-to-clipboard.copyCode",
-					"group": "9_cutcopypaste"
-				},
-				{
-					"when": "resourceScheme == file",
-					"command": "code-to-clipboard.copyCurrentTabCode",
-					"group": "9_cutcopypaste"
-				},
-				{
-					"when": "resourceScheme == file",
-					"command": "code-to-clipboard.openRelatedFilesDepth1",
-					"group": "9_cutcopypaste"
-				}
-			]
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run package",
-		"compile": "webpack",
-		"watch": "webpack --watch",
-		"package": "webpack --mode production --devtool hidden-source-map",
-		"vsce:package": "vsce package",
-		"compile-tests": "tsc -p . --outDir out",
-		"watch-tests": "tsc -p . -w --outDir out",
-		"pretest": "npm run compile-tests && npm run compile && npm run lint",
-		"lint": "biome lint .",
-		"fmt": "biome format --write .",
-		"test": "npm run pretest && node ./out/test/runTest.js",
-		"prerelease": "npm run test",
-		"release": "vsce package && vsce publish --yarn --pat EXTENSION_TOKEN"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.6.1",
-		"@types/mocha": "^10.0.6",
-		"@types/node": "18.x",
-		"@types/vscode": "^1.87.0",
-		"@vscode/test-cli": "^0.0.6",
-		"@vscode/test-electron": "^2.3.9",
-		"mocha": "^10.3.0",
-		"ts-loader": "^9.5.1",
-		"typescript": "^5.4.2",
-		"webpack": "^5.90.3",
-		"webpack-cli": "^5.1.4"
-	},
-	"dependencies": {
-		"minimatch": "^9.0.4"
-	}
+    "name": "code-to-clipboard",
+    "displayName": "code-to-clipboard",
+    "description": "Copy code to clipboard for sharing with Large Language Model",
+    "icon": "images/icon.webp",
+    "version": "0.4.1",
+    "publisher": "YuichiNakamura",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nakamurau1/code-to-clipboard.git"
+    },
+    "engines": {
+        "vscode": "^1.87.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "configuration": {
+            "title": "Code to Clipboard",
+            "properties": {
+                "codeToClipboard.excludePatterns": {
+                    "type": "array",
+                    "default": [
+                        "*.lock",
+                        "yarn.lock",
+                        "package-lock.json",
+                        "pnpm-lock.yaml",
+                        "composer.lock"
+                    ],
+                    "description": "Glob patterns for files to exclude when copying directory code."
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "code-to-clipboard.copyCode",
+                "title": "Copy Code from All Open Tabs to Clipboard"
+            },
+            {
+                "command": "code-to-clipboard.copyCurrentTabCode",
+                "title": "Copy Code from Current Tab to Clipboard"
+            },
+            {
+                "command": "code-to-clipboard.copyDirectoryCode",
+                "title": "Copy Directory Tree&Code to Clipboard"
+            },
+            {
+                "command": "code-to-clipboard.copyDirectoryTree",
+                "title": "Copy Directory Tree to Clipboard"
+            },
+            {
+                "command": "code-to-clipboard.openRelatedFilesDepth1",
+                "title": "Open Related Files"
+            }
+        ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "when": "explorerResourceIsFolder",
+                    "command": "code-to-clipboard.copyDirectoryCode",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "explorerResourceIsFolder",
+                    "command": "code-to-clipboard.copyDirectoryTree",
+                    "group": "9_cutcopypaste"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.copyCode",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.copyCurrentTabCode",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.openRelatedFilesDepth1",
+                    "group": "9_cutcopypaste"
+                }
+            ],
+            "editor/context": [
+                {
+                    "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.copyCode",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.copyCurrentTabCode",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.openRelatedFilesDepth1",
+                    "group": "9_cutcopypaste"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "compile": "webpack",
+        "watch": "webpack --watch",
+        "package": "webpack --mode production --devtool hidden-source-map",
+        "vsce:package": "vsce package",
+        "compile-tests": "tsc -p . --outDir out",
+        "watch-tests": "tsc -p . -w --outDir out",
+        "pretest": "npm run compile-tests && npm run compile && npm run lint",
+        "lint": "biome lint .",
+        "fmt": "biome format --write .",
+        "test": "npm run pretest && node ./out/test/runTest.js",
+        "prerelease": "npm run test",
+        "release": "vsce package && vsce publish --yarn --pat EXTENSION_TOKEN"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "1.6.1",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "18.x",
+        "@types/vscode": "^1.87.0",
+        "@vscode/test-cli": "^0.0.6",
+        "@vscode/test-electron": "^2.3.9",
+        "mocha": "^10.3.0",
+        "ts-loader": "^9.5.1",
+        "typescript": "^5.4.2",
+        "webpack": "^5.90.3",
+        "webpack-cli": "^5.1.4"
+    },
+    "dependencies": {
+        "minimatch": "^9.0.4"
+    }
 }
