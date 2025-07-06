@@ -6,8 +6,18 @@ import { minimatch } from 'minimatch';
 import * as jschardet from 'jschardet';
 import iconv from 'iconv-lite';
 
-// コードブロック用バッククォート（再利用しやすいよう定数化）
+ // コードブロック用バッククォート（再利用しやすいよう定数化）
 const CODE_BLOCK = "```";
+
+// 汎用候補エンコーディング（頻出順）
+const COMMON_ENCODINGS = [
+  "utf-8", "shift_jis", "euc-jp",
+  "euc-kr", "gbk", "gb18030", "big5",
+  "iso-8859-1", "windows-1250", "windows-1251",
+  "windows-1252", "windows-1253", "windows-1254",
+  "windows-1255", "windows-1256", "windows-1257",
+  "windows-1258"
+];
 
 interface OpenAIChatCompletionMessage {
 	role: string;
@@ -298,6 +308,25 @@ export function isTextFile(filePath: string): boolean {
 	}
 }
 
+ // � (U+FFFD) が含まれる＝化けていると判断
+function hasReplacementChar(text: string): boolean {
+  return text.includes("\uFFFD");
+}
+
+// iconv → TextDecoder の順に試す共通デコード関数
+function tryDecode(buffer: Buffer, enc: string): string | null {
+  try {
+    return iconv.decode(buffer, enc);
+  } catch {
+    /* fall-through */
+  }
+  try {
+    return new TextDecoder(enc as any).decode(buffer);
+  } catch {
+    return null;
+  }
+}
+
 function normalizeEncoding(enc: string | undefined): string {
   if (!enc) return "utf-8";
 
@@ -382,31 +411,29 @@ function normalizeEncoding(enc: string | undefined): string {
 }
 
 export function detectAndDecodeFile(filePath: string): string | null {
-	try {
-		const buffer = fs.readFileSync(filePath);
-		const detected = jschardet.detect(buffer);
+  try {
+    const buffer = fs.readFileSync(filePath);
 
-		const encoding = normalizeEncoding(
-			detected && detected.confidence > 0.8 ? detected.encoding : "utf-8"
-		);
+    // jschardet の信頼度を無視してまず採用
+    const detectedEnc = normalizeEncoding(jschardet.detect(buffer)?.encoding);
 
-		// ① iconv-lite で試す（多くのエンコーディングを網羅）
-		try {
-			return iconv.decode(buffer, encoding);
-		} catch {
-			/* fall-through -> TextDecoder or UTF-8 */
-		}
+    // 1. 検出結果で試行
+    let decoded = tryDecode(buffer, detectedEnc);
+    if (decoded && !hasReplacementChar(decoded)) return decoded;
 
-		// ② TextDecoder が扱える場合だけ使用
-		try {
-			return new TextDecoder(encoding as any).decode(buffer);
-		} catch {
-			return null;
-		}
-	} catch (error) {
-		console.error(`Error reading or decoding file ${filePath}:`, error);
-		return null;
-	}
+    // 2. 代表的エンコーディング候補を順に試行
+    for (const enc of COMMON_ENCODINGS) {
+      if (enc === detectedEnc) continue;           // 既に試した
+      decoded = tryDecode(buffer, enc);
+      if (decoded && !hasReplacementChar(decoded)) return decoded;
+    }
+
+    // 3. 最後の手段として UTF-8 を返す（または null）
+    return decoded ?? tryDecode(buffer, "utf-8");
+  } catch (error) {
+    console.error(`Error reading or decoding file ${filePath}:`, error);
+    return null;
+  }
 }
 
 export function deactivate() { }
