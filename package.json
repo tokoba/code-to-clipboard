@@ -10,7 +10,7 @@
         "url": "https://github.com/nakamurau1/code-to-clipboard.git"
     },
     "engines": {
-        "vscode": "^1.87.0"
+        "vscode": "^1.101.0"
     },
     "categories": [
         "Other"
@@ -107,9 +107,9 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "compile": "webpack",
-        "watch": "webpack --watch",
-        "package": "webpack --mode production --devtool hidden-source-map",
+        "compile": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --platform=node --external:vscode --format=cjs",
+        "watch": "npm run compile -- --watch",
+        "package": "npm run compile -- --minify",
         "vsce:package": "vsce package",
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
@@ -121,21 +121,19 @@
         "release": "vsce package && vsce publish --yarn --pat EXTENSION_TOKEN"
     },
     "devDependencies": {
-        "@biomejs/biome": "1.6.1",
-        "@types/mocha": "^10.0.6",
-        "@types/node": "18.x",
-        "@types/vscode": "^1.87.0",
-        "@vscode/test-cli": "^0.0.6",
-        "@vscode/test-electron": "^2.3.9",
-        "mocha": "^10.3.0",
-        "ts-loader": "^9.5.1",
-        "typescript": "^5.4.2",
-        "webpack": "^5.90.3",
-        "webpack-cli": "^5.1.4"
+        "@biomejs/biome": "2.0.6",
+        "@types/mocha": "10.0.10",
+        "@types/node": "24.0.10",
+        "@types/vscode": "1.101.0",
+        "@vscode/test-cli": "0.0.11",
+        "@vscode/test-electron": "2.5.2",
+        "esbuild": "^0.25.5",
+        "mocha": "11.7.1",
+        "typescript": "5.8.3"
     },
     "dependencies": {
-        "jschardet": "^3.1.4",
-        "minimatch": "^9.0.4",
-        "iconv-lite": "^0.6.3"
+        "iconv-lite": "0.6.3",
+        "jschardet": "3.1.4",
+        "minimatch": "10.0.3"
     }
 }
