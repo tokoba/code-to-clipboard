@@ -305,10 +305,7 @@ function normalizeEncoding(enc: string | undefined): string {
   let e = enc.trim().toLowerCase();
 
   // 共通的な揺らぎを統一
-  e = e.replace(/[_\s]/g, "-");          // "_" や空白 → "-"
-  if (e.startsWith("windows-")) {        // 例: windows-31j
-    e = e.replace(/^windows-/, "");
-  }
+  e = e.replace(/[_\s]+/g, "-");         // "_" や空白 → "-"
   if (e === "utf8") e = "utf-8";
   if (e === "utf16" || e === "utf-16") e = "utf-16le";
 
@@ -366,13 +363,26 @@ function normalizeEncoding(enc: string | undefined): string {
     "iso8859-15":"iso-8859-15","iso-8859-15":"iso-8859-15","latin9":"iso-8859-15",
 
     /* --- Mac ---------------------------------------------------- */
-    "mac":"macroman","macintosh":"macroman","macroman":"macroman"
+    "mac":"macroman","macintosh":"macroman","macroman":"macroman",
+
+    /* --- Windows specific encodings (prefix保持版) ------------ */
+    "windows-31j":"shift_jis",
+    "windows-874":"windows-874","874":"windows-874",
+    "windows-1250":"windows-1250","1250":"windows-1250",
+    "windows-1251":"windows-1251","1251":"windows-1251",
+    "windows-1252":"iso-8859-1","1252":"iso-8859-1",
+    "windows-1253":"windows-1253","1253":"windows-1253",
+    "windows-1254":"windows-1254","1254":"windows-1254",
+    "windows-1255":"windows-1255","1255":"windows-1255",
+    "windows-1256":"windows-1256","1256":"windows-1256",
+    "windows-1257":"windows-1257","1257":"windows-1257",
+    "windows-1258":"windows-1258","1258":"windows-1258"
   };
   return map[e] ?? e;
 }
 
 export function detectAndDecodeFile(filePath: string): string | null {
-		try {
+	try {
 		const buffer = fs.readFileSync(filePath);
 		const detected = jschardet.detect(buffer);
 
@@ -380,24 +390,18 @@ export function detectAndDecodeFile(filePath: string): string | null {
 			detected && detected.confidence > 0.8 ? detected.encoding : "utf-8"
 		);
 
-		// ① TextDecoder が対応している場合はそれを使用
+		// ① iconv-lite で試す（多くのエンコーディングを網羅）
+		try {
+			return iconv.decode(buffer, encoding);
+		} catch {
+			/* fall-through -> TextDecoder or UTF-8 */
+		}
+
+		// ② TextDecoder が扱える場合だけ使用
 		try {
 			return new TextDecoder(encoding as any).decode(buffer);
 		} catch {
-			/* fall-through */
-		}
-
-		// ② 非対応エンコーディングは iconv-lite にフォールバック
-		try {
-			return iconv.decode(buffer, encoding);
-		} catch (e) {
-			console.error(`Error decoding file ${filePath} with encoding ${encoding}:`, e);
-			// 最後の手段として UTF-8
-			try {
-				return iconv.decode(buffer, "utf-8");
-			} catch {
-				return null;
-			}
+			return null;
 		}
 	} catch (error) {
 		console.error(`Error reading or decoding file ${filePath}:`, error);
