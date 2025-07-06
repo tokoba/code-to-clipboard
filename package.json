@@ -134,6 +134,7 @@
         "webpack-cli": "^5.1.4"
     },
     "dependencies": {
+        "jschardet": "^3.1.4",
         "minimatch": "^9.0.4"
     }
 }
