@@ -12,10 +12,12 @@ const CODE_BLOCK = "```";
 // デバッグ用 OutputChannel
 const outputChannel = vscode.window.createOutputChannel("CodeToClipboard");
 
-// 汎用候補エンコーディング（頻出順）
+// 汎用候補エンコーディング（優先度を中国語系→日本語系の順に調整）
 const COMMON_ENCODINGS = [
-  "utf-8", "shift_jis", "euc-jp",
-  "euc-kr", "gbk", "gb18030", "big5",
+  "utf-8",
+  "gb18030", "gbk", "gb2312", "big5",       // ← 中国語系を先に
+  "shift_jis", "euc-jp",                    // ← 日本語系
+  "euc-kr",                                 // ← 韓国語系
   "iso-8859-1", "windows-1250", "windows-1251",
   "windows-1252", "windows-1253", "windows-1254",
   "windows-1255", "windows-1256", "windows-1257",
@@ -323,9 +325,14 @@ function hasC1Controls(text: string): boolean {
   return /[\u0080-\u009F]/.test(text);
 }
 
-// CJK/Hiragana/Katakana/Hangul のいずれかを含むか
+ // CJK/Hiragana/Katakana/Hangul のいずれかを含むか
 function hasCJKChars(text: string): boolean {
   return /[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/.test(text);
+}
+
+// ひらがな・カタカナを含むか（日本語判定に使用）
+function hasKana(text: string): boolean {
+  return /[\u3040-\u309F\u30A0-\u30FF]/.test(text);
 }
 
 // iconv → TextDecoder の順に試す共通デコード関数
@@ -453,6 +460,10 @@ export function detectAndDecodeFile(filePath: string): string | null {
 
       // CJK 系文字が含まれていれば即採用
       if (hasCJKChars(decoded)) {
+        // 日本語系エンコーディングなのに仮名が無ければスキップし別候補を探す
+        if ((enc === "shift_jis" || enc === "euc-jp") && !hasKana(decoded)) {
+          continue;
+        }
         outputChannel.appendLine(`[OK]  ${filePath}  ->  ${enc} (CJK hit)`);
         return decoded;
       }
