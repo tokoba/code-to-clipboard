@@ -318,6 +318,16 @@ function hasReplacementChar(text: string): boolean {
   return text.includes("\uFFFD");
 }
 
+// C1 制御文字 (U+0080–U+009F) を含むか
+function hasC1Controls(text: string): boolean {
+  return /[\u0080-\u009F]/.test(text);
+}
+
+// CJK/Hiragana/Katakana/Hangul のいずれかを含むか
+function hasCJKChars(text: string): boolean {
+  return /[\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/.test(text);
+}
+
 // iconv → TextDecoder の順に試す共通デコード関数
 function tryDecode(buffer: Buffer, enc: string): string | null {
   try {
@@ -424,16 +434,38 @@ export function detectAndDecodeFile(filePath: string): string | null {
     const tryList = [
       detectedEnc,
       ...COMMON_ENCODINGS.filter(e => e !== detectedEnc),
+      "iso-8859-1",     // 最後に単バイト系を保険で
       "utf-8"
     ];
 
+    let fallback: string | null = null;
+
     for (const enc of tryList) {
+      if (!enc) continue;
       tried.push(enc);
       const decoded = tryDecode(buffer, enc);
-      if (decoded && !hasReplacementChar(decoded)) {
-        outputChannel.appendLine(`[OK]  ${filePath}  ->  ${enc}`);
+      if (!decoded) continue;
+
+      // 基本的な文字化け判定
+      if (hasReplacementChar(decoded) || hasC1Controls(decoded)) {
+        continue; // 明らかに怪しいので次へ
+      }
+
+      // CJK 系文字が含まれていれば即採用
+      if (hasCJKChars(decoded)) {
+        outputChannel.appendLine(`[OK]  ${filePath}  ->  ${enc} (CJK hit)`);
         return decoded;
       }
+
+      // 英数字のみ等の場合は候補として保持しつつ探索続行
+      if (!fallback) {
+        fallback = decoded;
+      }
+    }
+
+    if (fallback) {
+      outputChannel.appendLine(`[OK]  ${filePath}  ->  ${tried[tried.indexOf(detectedEnc)] ?? "utf-8"} (fallback)`);
+      return fallback;
     }
 
     outputChannel.appendLine(`[NG]  ${filePath}  (tried: ${tried.join(", ")})`);
