@@ -9,6 +9,9 @@ import iconv from 'iconv-lite';
  // コードブロック用バッククォート（再利用しやすいよう定数化）
 const CODE_BLOCK = "```";
 
+// デバッグ用 OutputChannel
+const outputChannel = vscode.window.createOutputChannel("CodeToClipboard");
+
 // 汎用候補エンコーディング（頻出順）
 const COMMON_ENCODINGS = [
   "utf-8", "shift_jis", "euc-jp",
@@ -33,6 +36,8 @@ interface OpenAIChatCompletionResponse {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  outputChannel.clear();
+  outputChannel.appendLine("CodeToClipboard extension activated");
 	const disposable = vscode.commands.registerCommand(
 		"code-to-clipboard.copyCode",
 		async () => {
@@ -413,25 +418,28 @@ function normalizeEncoding(enc: string | undefined): string {
 export function detectAndDecodeFile(filePath: string): string | null {
   try {
     const buffer = fs.readFileSync(filePath);
-
-    // jschardet の信頼度を無視してまず採用
     const detectedEnc = normalizeEncoding(jschardet.detect(buffer)?.encoding);
 
-    // 1. 検出結果で試行
-    let decoded = tryDecode(buffer, detectedEnc);
-    if (decoded && !hasReplacementChar(decoded)) return decoded;
+    const tried: string[] = [];
+    const tryList = [
+      detectedEnc,
+      ...COMMON_ENCODINGS.filter(e => e !== detectedEnc),
+      "utf-8"
+    ];
 
-    // 2. 代表的エンコーディング候補を順に試行
-    for (const enc of COMMON_ENCODINGS) {
-      if (enc === detectedEnc) continue;           // 既に試した
-      decoded = tryDecode(buffer, enc);
-      if (decoded && !hasReplacementChar(decoded)) return decoded;
+    for (const enc of tryList) {
+      tried.push(enc);
+      const decoded = tryDecode(buffer, enc);
+      if (decoded && !hasReplacementChar(decoded)) {
+        outputChannel.appendLine(`[OK]  ${filePath}  ->  ${enc}`);
+        return decoded;
+      }
     }
 
-    // 3. 最後の手段として UTF-8 を返す（または null）
-    return decoded ?? tryDecode(buffer, "utf-8");
+    outputChannel.appendLine(`[NG]  ${filePath}  (tried: ${tried.join(", ")})`);
+    return null;
   } catch (error) {
-    console.error(`Error reading or decoding file ${filePath}:`, error);
+    outputChannel.appendLine(`[ERR] ${filePath}  ${String(error)}`);
     return null;
   }
 }
