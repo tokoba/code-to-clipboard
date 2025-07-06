@@ -31,8 +31,8 @@ export function activate(context: vscode.ExtensionContext) {
 					if (tab.input instanceof vscode.TabInputText) {
 						const filePath = tab.input.uri.fsPath;
 						if (isTextFile(filePath)) {
-							const document = await vscode.workspace.openTextDocument(filePath);
-							const fileContent = document.getText();
+							const fileContent = detectAndDecodeFile(filePath);
+							if (fileContent === null) { continue; }
 							const relativeFilePath = vscode.workspace.asRelativePath(filePath);
 							content += `### ${relativeFilePath}\n\n```\n${fileContent}\n```\n\n`;
 							copiedFiles.push(relativeFilePath);
@@ -58,10 +58,10 @@ export function activate(context: vscode.ExtensionContext) {
 		async () => {
 			const activeTextEditor = vscode.window.activeTextEditor;
 			if (activeTextEditor) {
-				const document = activeTextEditor.document;
-				const filePath = document.uri.fsPath;
+				const filePath = activeTextEditor.document.uri.fsPath;
 				if (isTextFile(filePath)) {
-					const fileContent = document.getText();
+					const fileContent = detectAndDecodeFile(filePath);
+					if (fileContent === null) { return; }
 					const relativeFilePath = vscode.workspace.asRelativePath(filePath);
 					const content = `### ${relativeFilePath}\n\n```\n${fileContent}\n```\n\n`;
 					const projectName = vscode.workspace.name || "Untitled";
@@ -294,23 +294,39 @@ export function isTextFile(filePath: string): boolean {
 	}
 }
 
+function normalizeEncoding(enc: string | undefined): string {
+  if (!enc) return "utf-8";
+  switch (enc.toLowerCase()) {
+    case "shift_jis":
+    case "sjis":
+    case "ms932":
+      return "shift_jis";
+    case "gb2312":
+    case "gb_2312":
+    case "gbk":
+      return "gbk";
+    case "euc-kr":
+    case "ks_c_5601-1987":
+    case "iso-2022-kr":
+      return "euc-kr";
+    default:
+      return enc.toLowerCase();
+  }
+}
+
 export function detectAndDecodeFile(filePath: string): string | null {
 		try {
 		const buffer = fs.readFileSync(filePath);
 		const detected = jschardet.detect(buffer);
 
-		// Use detected encoding if confidence is high, otherwise default to UTF-8
-		const encoding = detected && detected.confidence > 0.8 ? detected.encoding : "UTF-8";
+		const encoding = normalizeEncoding(
+			detected && detected.confidence > 0.8 ? detected.encoding : "utf-8"
+		);
 
-		// TextDecoder supports many encodings. Let's try the detected one.
-		// We need to handle potential errors if the encoding name is not recognized.
 		try {
-			// Normalize encoding name to lower case as TextDecoder is case-insensitive
-			// and jschardet might return upper-case names.
-			return new TextDecoder(encoding.toLowerCase()).decode(buffer);
+			return new TextDecoder(encoding).decode(buffer);
 		} catch (e) {
-			// If the detected encoding is not supported or fails, fallback to UTF-8
-			if (encoding.toUpperCase() !== "UTF-8") {
+			if (encoding !== "utf-8") {
 				try {
 					return new TextDecoder("utf-8").decode(buffer);
 				} catch (utf8Error) {
@@ -318,7 +334,6 @@ export function detectAndDecodeFile(filePath: string): string | null {
 					return null;
 				}
 			}
-			// If UTF-8 itself failed, then we can't do much.
 			console.error(`Error decoding file ${filePath} with detected encoding ${encoding}:`, e);
 			return null;
 		}
