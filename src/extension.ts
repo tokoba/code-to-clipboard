@@ -365,18 +365,18 @@ function normalizeEncoding(enc: string | undefined): string {
     /* --- Mac ---------------------------------------------------- */
     "mac":"macroman","macintosh":"macroman","macroman":"macroman",
 
-    /* --- Windows specific encodings (prefix保持版) ------------ */
+    /* --- Windows specific encodings (追加エイリアス・重複排除) -- */
     "windows-31j":"shift_jis",
-    "windows-874":"windows-874","874":"windows-874",
-    "windows-1250":"windows-1250","1250":"windows-1250",
-    "windows-1251":"windows-1251","1251":"windows-1251",
-    "windows-1252":"iso-8859-1","1252":"iso-8859-1",
-    "windows-1253":"windows-1253","1253":"windows-1253",
-    "windows-1254":"windows-1254","1254":"windows-1254",
-    "windows-1255":"windows-1255","1255":"windows-1255",
-    "windows-1256":"windows-1256","1256":"windows-1256",
-    "windows-1257":"windows-1257","1257":"windows-1257",
-    "windows-1258":"windows-1258","1258":"windows-1258"
+    "874":"windows-874",
+    "1250":"windows-1250",
+    "1251":"windows-1251",
+    "1252":"iso-8859-1",
+    "1253":"windows-1253",
+    "1254":"windows-1254",
+    "1255":"windows-1255",
+    "1256":"windows-1256",
+    "1257":"windows-1257",
+    "1258":"windows-1258"
   };
   return map[e] ?? e;
 }
