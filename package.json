@@ -15,7 +15,9 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onCommand:code-to-clipboard.copyOpenTabFileNames"
+    ],
     "main": "./dist/extension.js",
     "contributes": {
         "configuration": {
@@ -54,6 +56,10 @@
             {
                 "command": "code-to-clipboard.openRelatedFilesDepth1",
                 "title": "Open Related Files"
+            },
+            {
+                "command": "code-to-clipboard.copyOpenTabFileNames",
+                "title": "Copy All The open tab file names"
             }
         ],
         "menus": {
@@ -101,6 +107,12 @@
                     "when": "resourceScheme == file",
                     "command": "code-to-clipboard.openRelatedFilesDepth1",
                     "group": "9_cutcopypaste"
+                }
+            ],
+            "tab/context": [
+                {
+                    "command": "code-to-clipboard.copyOpenTabFileNames",
+                    "group": "navigation"
                 }
             ]
         }

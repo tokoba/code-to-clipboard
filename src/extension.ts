@@ -216,7 +216,37 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	context.subscriptions.push(disposable, disposableCurrentTab, disposableDirectory, disposableDirectoryTree, disposableOpenRelatedFilesDepth1);
+	const disposableCopyOpenTabFileNames = vscode.commands.registerCommand(
+		"code-to-clipboard.copyOpenTabFileNames",
+		async () => {
+			const names: string[] = [];
+
+			for (const group of vscode.window.tabGroups.all) {
+				for (const tab of group.tabs) {
+					if (tab.input instanceof vscode.TabInputText) {
+						names.push(`@${path.basename(tab.input.uri.fsPath)}`);
+					}
+				}
+			}
+
+			if (names.length === 0) {
+				vscode.window.showInformationMessage("No open text tabs.");
+				return;
+			}
+
+			await vscode.env.clipboard.writeText(names.join(" "));
+			vscode.window.showInformationMessage("Open tab file names copied to clipboard!");
+		},
+	);
+
+	context.subscriptions.push(
+		disposable,
+		disposableCurrentTab,
+		disposableDirectory,
+		disposableDirectoryTree,
+		disposableOpenRelatedFilesDepth1,
+		disposableCopyOpenTabFileNames,   // ← これを追加
+	);
 }
 
 export function generateDirectoryTree(dir: string, indent: string, includeFileContents: boolean): string {
