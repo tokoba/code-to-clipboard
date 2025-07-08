@@ -1,75 +1,80 @@
-# 「code-to-clipboard」を世界水準へ ─ DDD ベース構成ガイド
+# DDDに基づくリファクタリング計画
 
-## 目標
+## 1. 目的
 
-1. 機能単位で疎結合化し、機能追加・抽出を低コスト化  
-2. presentation / application / domain / infrastructure の責務分離  
-3. ドメイン層は VS Code 依存ゼロで Node 単体テスト可能  
-4. 依存関係逆転を徹底し、上位レイヤは下位詳細に依存しない  
+現在の `src/extension.ts` に集中しているビジネスロジックを、DDD（ドメイン駆動設計）の考え方に基づき、機能ごとのモジュールに分割する。
+これにより、コードの可読性、保守性、および拡張性を向上させることを目的とする。
 
-## レイヤ定義
+## 2. 提案するディレクトリ構成
 
-| レイヤ | 役割 | VS Code 依存 | 置き場 |
-|-------|------|-------------|--------|
-| presentation | Command・Webview 等 UI | あり | `presentation/` |
-| application  | ユースケース調整 | 最小 | `application/` |
-| domain       | ビジネスロジック | なし | `domain/` |
-| infrastructure| 外部 IO (VS Code・Git・OpenAI) | あり | `infrastructure/` |
+`tsconfig.json` の `paths` エイリアス設定に基づき、`src` ディレクトリ配下を以下のように再構成する。
 
-## トップレベル構成
-
-```text
+```
 src/
-├── extension.ts
-├── core/                 # 共通横断モジュール
-│   ├── di/               # DI 設定 (inversify 等)
-│   ├── domain/           # 共通 ValueObject
-│   ├── infrastructure/   # 共通 Adapter (VsCodeClipboard 等)
-│   └── utils/            # 汎用ヘルパ
-└── features/             # 機能ごとに完全分離
-    ├── codeCopy/
-    │   ├── presentation/commands.ts
-    │   ├── application/CopyAllOpenTabsUseCase.ts
-    │   ├── domain/{CodeSnippet,CodeFile}.ts
-    │   └── infrastructure/VsCodeClipboard.ts
-    ├── directoryCopy/
-    │   ├── presentation/commands.ts
-    │   ├── application/CopyDirectoryTreeUseCase.ts
-    │   ├── domain/DirectoryGraph.ts
-    │   └── infrastructure/FsNodeRepository.ts
-    ├── filenameCopy/
-    │   ├── presentation/commands.ts
-    │   ├── application/CopyOpenTabFileNamesUseCase.ts
-    │   ├── domain/FileNameList.ts
-    │   └── infrastructure/VsCodeTabRepository.ts
-    └── relatedFiles/
-        ├── presentation/commands.ts
-        ├── application/OpenRelatedFilesUseCase.ts
-        ├── domain/RelatedFileFinder.ts
-        └── infrastructure/GitFileLocator.ts
+├── features/
+│   ├── common/
+│   │   ├── fileUtils.ts      # isTextFile などのファイル共通処理
+│   │   ├── encoding.ts       # detectAndDecodeFile などのエンコーディング処理
+│   │   └── logger.ts         # vscode.OutputChannel の共有インスタンス
+│   │
+│   ├── codeCopy/
+│   │   ├── copyAllTabs.ts
+│   │   └── copyCurrentTab.ts
+│   │
+│   ├── directoryCopy/
+│   │   ├── copyDirectoryCode.ts
+│   │   └── copyDirectoryTree.ts
+│   │
+│   ├── filenameCopy/
+│   │   └── copyOpenTabFileNames.ts
+│   │
+│   ├── relatedFiles/
+│   │   └── openRelatedFiles.ts
+│   │
+│   └── types/
+│       └── index.ts          # 共有する型定義 (例: OpenAIChatCompletionResponse)
+│
+└── extension.ts              # エントリーポイント
 ```
 
-## 実装ロードマップ
+## 3. リファクタリング実装計画（チェックリスト）
 
-1. **core モジュール整備** – 共通 Adapter を `core/infrastructure` へ、DI を `core/di` へ配置  
-2. **既存処理の分割** – `extension.ts` からロジックを各 UseCase へ移動  
-3. **型境界の厳格化** – Domain 層で VS Code 型参照を禁止 (ESLint ルール導入)  
-4. **ビルド & テスト** – `tsconfig paths` に `@core/*`, `@codeCopy/*` 等を設定し、  
-   Domain/Application を Node 単体テスト (Mocha/Jest)、Presentation を VS Code Test で結合試験  
-5. **CI/CD** – GitHub Actions で `pnpm test` → `vsce package` → `vsce publish` を自動化  
+リファクタリングを安全かつ効率的に進めるための具体的な手順と確認事項。
 
-## 命名規約
+### ✅ 1. `src/extension.ts` の責務をエントリーポイントに限定する
 
-* コマンド ID: `feature.action` (`codeCopy.copyAll`)  
-* UseCase: 動詞 + 名詞 + `UseCase` (`CopyDirectoryTreeUseCase`)  
-* Adapter: `Repository`, `Client`, `Gateway`, `Service` 接尾辞  
+- **現状:** すべてのコマンドのビジネスロジックが `activate` 関数内に実装されている。
+- **アクション:**
+  - [ ] 各コマンドのロジックを、上記ディレクトリ構成案に従い、それぞれの `features/**/*.ts` ファイルに関数として切り出してエクスポートする。
+  - [ ] `src/extension.ts` は、各機能モジュールから関数をインポートし、`vscode.commands.registerCommand` のコールバックとして登録するだけの**「接着層」**に徹する。
 
-## 拡張余地
+### ✅ 2. 共通機能を `@common` モジュールに集約する
 
-* Webview UI は `presentation/panels/` に追加  
-* CLI 版は別 Presentation を追加し既存層を再利用  
-* AI プロバイダー差し替えは Infrastructure の Strategy で対応  
+- **現状:** 複数の機能から利用される可能性のある関数が `extension.ts` 内に散在している。
+- **アクション:**
+  - [ ] `isTextFile` を `src/features/common/fileUtils.ts` に移動する。
+  - [ ] `detectAndDecodeFile` および、それに関連するすべてのヘルパー関数（`normalizeEncoding`, `tryDecode`, `has...` など）を `src/features/common/encoding.ts` に移動する。
+  - [ ] `vscode.window.createOutputChannel` で生成される `outputChannel` を `src/features/common/logger.ts` で初期化・エクスポートし、各モジュールから共有して利用できるようにする。
 
----
+### ✅ 3. テストコードをリファクタリングに追従させる
 
-> **最初のステップ**: `core` と `features/*/presentation` ディレクトリーを作成し、既存ロジックを UseCase へ段階的に移行してください。
+- **現状:** テストコードはリファクタリング前の `src/extension.ts` の構造に依存している。
+- **アクション:**
+  - [ ] `src/test/suite/extension.test.ts` 内の `import` 文を、リファクタリング後の新しいモジュールパス（例: `@common/fileUtils`）からインポートするように修正する。
+  - [ ] リファクタリング後に `npm run test` を実行し、`tsc` によるコンパイルとテストが `tsconfig.json` の `paths` エイリアスを正しく解決できていることを確認する。
+
+### ✅ 4. `tsconfig.json` の設定を最適化する（推奨）
+
+- **現状:** `moduleResolution` がデフォルト（`Node16`）になっている。
+- **アクション:**
+  - [ ] `compilerOptions` 内の `"moduleResolution": "NodeNext"` を有効化する。`paths` エイリアスを使用する場合、`NodeNext` の方がより安定したモジュール解決を提供するため。
+
+### ✅ 5. 段階的な移行戦略
+
+一度にすべてを変更するのではなく、コマンド単位で段階的に移行を進めることを推奨する。
+
+1. **例：`copyCurrentTabCode` から着手**
+2. `copyCurrentTabCode` のロジックを `src/features/codeCopy/copyCurrentTab.ts` に移動する。
+3. `extension.ts` で新しい関数をインポートしてコマンドを登録する。
+4. 関連するテストを修正し、`npm run test` が成功することを確認する。
+5. 上記が完了したら、次のコマンド（例: `copyCode`）の移行に着手する。
