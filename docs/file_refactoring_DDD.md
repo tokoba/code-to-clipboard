@@ -9,7 +9,7 @@
 
 `tsconfig.json` の `paths` エイリアス設定に基づき、`src` ディレクトリ配下を以下のように再構成する。
 
-```
+```text
 src/
 ├── features/
 │   ├── common/
