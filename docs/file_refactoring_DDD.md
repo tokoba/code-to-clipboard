@@ -31,5 +31,5 @@ src/
     │   └── encoder.ts
     └── relatedFiles/
         ├── commands.ts
-        ├── git.ts
+        └── git.ts
 ```
