@@ -1,7 +1,7 @@
-import { listWorkspaceFiles } from "@common/workspaceFiles"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import * as vscode from "vscode"
+import { listWorkspaceFiles } from "../common/workspaceFiles"
 import type { OpenAIChatCompletionResponse } from "../types"
 
 export async function openRelatedFilesDepth1(resource: vscode.Uri) {
@@ -24,9 +24,7 @@ export async function openRelatedFilesDepth1(resource: vscode.Uri) {
 
                 // VS Code API＋.gitignore に基づきファイル一覧取得
                 const fileUris = await listWorkspaceFiles()
-                const allFiles = fileUris.map((u) =>
-                    path.relative(rootPath, u.fsPath),
-                )
+                const allFiles = fileUris.map((u) => path.relative(rootPath, u.fsPath))
 
                 const apiKey = process.env.OPENAI_API_KEY
                 if (!apiKey) {
