@@ -3,7 +3,7 @@
     "displayName": "code-to-clipboard",
     "description": "Copy code to clipboard for sharing with Large Language Model",
     "icon": "images/icon.webp",
-    "version": "0.4.1",
+    "version": "0.4.2",
     "publisher": "YuichiNakamura",
     "repository": {
         "type": "git",
@@ -15,14 +15,7 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [
-        "onCommand:code-to-clipboard.copyCode",
-        "onCommand:code-to-clipboard.copyCurrentTabCode",
-        "onCommand:code-to-clipboard.copyDirectoryCode",
-        "onCommand:code-to-clipboard.copyDirectoryTree",
-        "onCommand:code-to-clipboard.openRelatedFilesDepth1",
-        "onCommand:code-to-clipboard.copyOpenTabFileNames"
-    ],
+    "activationEvents": [],
     "main": "./dist/extension.js",
     "contributes": {
         "configuration": {
@@ -93,6 +86,11 @@
                 },
                 {
                     "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.copyOpenTabFileNames",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "resourceScheme == file",
                     "command": "code-to-clipboard.openRelatedFilesDepth1",
                     "group": "9_cutcopypaste"
                 }
@@ -110,15 +108,13 @@
                 },
                 {
                     "when": "resourceScheme == file",
+                    "command": "code-to-clipboard.copyOpenTabFileNames",
+                    "group": "9_cutcopypaste"
+                },
+                {
+                    "when": "resourceScheme == file",
                     "command": "code-to-clipboard.openRelatedFilesDepth1",
                     "group": "9_cutcopypaste"
-                }
-            ],
-            "tab/context": [
-                {
-                    "command": "code-to-clipboard.copyOpenTabFileNames",
-                    "group": "navigation",
-                    "when": "resourceScheme == file"
                 }
             ]
         }
