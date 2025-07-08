@@ -15,7 +15,14 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onCommand:code-to-clipboard.copyCode",
+        "onCommand:code-to-clipboard.copyCurrentTabCode",
+        "onCommand:code-to-clipboard.copyDirectoryCode",
+        "onCommand:code-to-clipboard.copyDirectoryTree",
+        "onCommand:code-to-clipboard.openRelatedFilesDepth1",
+        "onCommand:code-to-clipboard.copyOpenTabFileNames"
+    ],
     "main": "./dist/extension.js",
     "contributes": {
         "configuration": {
@@ -110,7 +117,8 @@
             "tab/context": [
                 {
                     "command": "code-to-clipboard.copyOpenTabFileNames",
-                    "group": "navigation"
+                    "group": "navigation",
+                    "when": "resourceScheme == file"
                 }
             ]
         }
