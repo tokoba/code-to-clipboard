@@ -1,4 +1,4 @@
-import * as childProcess from "node:child_process"
+import { listWorkspaceFiles } from "@common/workspaceFiles"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import * as vscode from "vscode"
@@ -22,11 +22,11 @@ export async function openRelatedFilesDepth1(resource: vscode.Uri) {
                 }
                 const rootPath = workspaceFolders[0].uri.fsPath
 
-                const allFiles = childProcess
-                    .execSync(`git -C "${rootPath}" ls-files`)
-                    .toString()
-                    .trim()
-                    .split("\n")
+                // VS Code API＋.gitignore に基づきファイル一覧取得
+                const fileUris = await listWorkspaceFiles()
+                const allFiles = fileUris.map((u) =>
+                    path.relative(rootPath, u.fsPath),
+                )
 
                 const apiKey = process.env.OPENAI_API_KEY
                 if (!apiKey) {
