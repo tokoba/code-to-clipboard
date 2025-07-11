@@ -1,6 +1,7 @@
 import * as fs from "node:fs"
 import * as path from "node:path"
 import * as vscode from "vscode"
+import { detectAndDecodeFile } from "../common/encoding"
 import { listWorkspaceFiles } from "../common/workspaceFiles"
 import type { OpenAIChatCompletionResponse } from "../types"
 
@@ -34,10 +35,39 @@ export async function openRelatedFilesDepth1(resource: vscode.Uri) {
                     return
                 }
 
+                // Read and prepare start file content
+                const fileContent = detectAndDecodeFile(startFile)
+                if (fileContent === null) {
+                    vscode.window.showErrorMessage(
+                        `Failed to read or decode the starting file: ${startFile}`
+                    )
+                    return
+                }
+                const startFileContent = fileContent.split("\n").slice(0, 200).join("\n")
+
                 const fileListText = allFiles.map((f) => `- ${f}`).join("\n")
                 const relativeStartFile = path.relative(rootPath, startFile)
 
-                const prompt = `\nYou are given a project file list and a starting file.\nThe project files are:\n${fileListText}\n\nThe starting file is: ${relativeStartFile}\n\nIdentify all files that are directly referenced or related to the starting file (depth=1).\nReturn only their relative paths, one per line, without explanations.\n`
+                const prompt = `
+# Related File Search
+
+## Request
+You are given a project file list and a starting file. Identify all files that are directly referenced or strongly related to the starting file.
+Return only their relative paths, one per line, without explanations.
+
+## Workspace Project Files
+The project files are:
+${fileListText}
+
+## Starting File
+The starting file is: ${relativeStartFile}
+
+## Starting File Content
+The first 200 lines of the starting file are as follows:
+\`\`\`
+${startFileContent}
+\`\`\`
+`
 
                 const endpoint = "http://localhost:5130/v1/chat/completions"
                 // const endpoint = "https://api.openai.com/v1/chat/completions"
