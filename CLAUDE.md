@@ -55,8 +55,20 @@ npm run vsce:package
 - LLM integration: `src/features/relatedFiles/openRelatedFiles.ts`
 - Clipboard operations: `src/features/clipboard/`
 
-## Configuration
+## Configuration (v0.5.2)
 
-- Set `OPENAI_API_KEY` for AI features
-- Local LLM endpoint: `http://localhost:5130/v1/chat/completions`
-- VS Code setting: `codeToClipboard.excludePatterns` for file filtering
+### LLM Provider Settings
+- **Provider Selection**: `codeToClipboard.llm.provider` (openai, gemini, claude, local)
+- **Fallback Providers**: `codeToClipboard.llm.fallbackProviders`
+- **API Keys**: Environment variables or VS Code secret storage
+  - OpenAI: `OPENAI_API_KEY`
+  - Google: `GOOGLE_API_KEY` 
+  - Anthropic: `ANTHROPIC_API_KEY`
+- **Local LLM**: `codeToClipboard.llm.providers.local.endpoint`
+- **File Filtering**: `codeToClipboard.excludePatterns`
+
+### New Architecture Files (v0.5.2)
+- LLM configuration types: `src/features/types/llmConfig.ts`
+- Configuration manager: `src/features/llm/LLMConfigurationManager.ts`
+- Provider implementations: `src/features/llm/providers/`
+- Base provider class: `src/features/llm/base/BaseLLMProvider.ts`

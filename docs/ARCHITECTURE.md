@@ -152,10 +152,44 @@ Commands are available in:
 3. **File Validation**: Checks for file existence before operations
 4. **User Feedback**: Error messages displayed through VS Code notifications
 
+## LLM Configuration System (v0.5.2)
+
+### Multi-Provider Architecture
+
+The extension now supports multiple LLM providers through a flexible configuration system:
+
+**Supported Providers**:
+- **OpenAI**: GPT-4o and other OpenAI models
+- **Google Gemini**: Gemini Pro and other Google AI models  
+- **Anthropic Claude**: Claude 3 Sonnet and other Claude models
+- **Local LLM**: Any OpenAI API-compatible local endpoint
+
+**Configuration Management**:
+- **VS Code Settings**: Both global and workspace-specific configuration
+- **Secure Credentials**: Support for environment variables and VS Code secret storage
+- **Fallback System**: Automatic fallback to configured backup providers
+- **Provider Validation**: Real-time configuration validation and error reporting
+
+**Key Configuration Files**:
+- `src/features/types/llmConfig.ts` - Type definitions and default configurations
+- `src/features/llm/LLMConfigurationManager.ts` - Central configuration management
+- `src/features/llm/base/BaseLLMProvider.ts` - Abstract provider base class
+- `src/features/llm/providers/` - Individual provider implementations
+
+**Usage Example**:
+```json
+{
+  "codeToClipboard.llm.provider": "claude",
+  "codeToClipboard.llm.providers.claude.model": "claude-3-sonnet-20240229",
+  "codeToClipboard.llm.fallbackProviders": ["openai", "local"]
+}
+```
+
 ## Future Enhancement Opportunities
 
-1. **Configuration UI**: VS Code settings page for LLM endpoint configuration
+1. **Provider Marketplace**: Allow third-party provider plugins
 2. **Encoding Cache**: Cache encoding detection results for better performance
-3. **Custom Prompts**: Allow users to customize LLM prompts for file discovery
+3. **Custom Prompts**: Provider-specific prompt optimization templates
 4. **Batch Operations**: Support for batch file processing
 5. **Preview Mode**: Show preview before opening related files
+6. **Usage Analytics**: Token usage tracking and cost estimation
