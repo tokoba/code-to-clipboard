@@ -3,7 +3,7 @@
     "displayName": "code-to-clipboard",
     "description": "Copy code to clipboard for sharing with Large Language Model",
     "icon": "images/icon.webp",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "publisher": "YuichiNakamura",
     "repository": {
         "type": "git",
@@ -31,6 +31,136 @@
                         "composer.lock"
                     ],
                     "description": "Glob patterns for files to exclude when copying directory code."
+                },
+                "codeToClipboard.llm.provider": {
+                    "type": "string",
+                    "default": "openai",
+                    "enum": [
+                        "openai",
+                        "gemini",
+                        "claude",
+                        "local"
+                    ],
+                    "enumDescriptions": [
+                        "OpenAI GPT models",
+                        "Google Gemini models",
+                        "Anthropic Claude models",
+                        "Local LLM endpoint"
+                    ],
+                    "description": "Primary LLM provider to use for related file discovery"
+                },
+                "codeToClipboard.llm.providers.openai.endpoint": {
+                    "type": "string",
+                    "default": "https://api.openai.com/v1/chat/completions",
+                    "description": "OpenAI API endpoint URL"
+                },
+                "codeToClipboard.llm.providers.openai.model": {
+                    "type": "string",
+                    "default": "gpt-4o",
+                    "description": "OpenAI model to use"
+                },
+                "codeToClipboard.llm.providers.openai.apiKeySource": {
+                    "type": "string",
+                    "default": "environment",
+                    "enum": [
+                        "environment",
+                        "vscode-secrets"
+                    ],
+                    "description": "Where to get the OpenAI API key from"
+                },
+                "codeToClipboard.llm.providers.openai.apiKeyEnvVar": {
+                    "type": "string",
+                    "default": "OPENAI_API_KEY",
+                    "description": "Environment variable name for OpenAI API key"
+                },
+                "codeToClipboard.llm.providers.gemini.endpoint": {
+                    "type": "string",
+                    "default": "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+                    "description": "Google Gemini API endpoint URL"
+                },
+                "codeToClipboard.llm.providers.gemini.model": {
+                    "type": "string",
+                    "default": "gemini-pro",
+                    "description": "Google Gemini model to use"
+                },
+                "codeToClipboard.llm.providers.gemini.apiKeySource": {
+                    "type": "string",
+                    "default": "environment",
+                    "enum": [
+                        "environment",
+                        "vscode-secrets"
+                    ],
+                    "description": "Where to get the Google API key from"
+                },
+                "codeToClipboard.llm.providers.gemini.apiKeyEnvVar": {
+                    "type": "string",
+                    "default": "GOOGLE_API_KEY",
+                    "description": "Environment variable name for Google API key"
+                },
+                "codeToClipboard.llm.providers.claude.endpoint": {
+                    "type": "string",
+                    "default": "https://api.anthropic.com/v1/messages",
+                    "description": "Anthropic Claude API endpoint URL"
+                },
+                "codeToClipboard.llm.providers.claude.model": {
+                    "type": "string",
+                    "default": "claude-3-sonnet-20240229",
+                    "description": "Anthropic Claude model to use"
+                },
+                "codeToClipboard.llm.providers.claude.apiKeySource": {
+                    "type": "string",
+                    "default": "environment",
+                    "enum": [
+                        "environment",
+                        "vscode-secrets"
+                    ],
+                    "description": "Where to get the Anthropic API key from"
+                },
+                "codeToClipboard.llm.providers.claude.apiKeyEnvVar": {
+                    "type": "string",
+                    "default": "ANTHROPIC_API_KEY",
+                    "description": "Environment variable name for Anthropic API key"
+                },
+                "codeToClipboard.llm.providers.local.endpoint": {
+                    "type": "string",
+                    "default": "http://localhost:5130/v1/chat/completions",
+                    "description": "Local LLM endpoint URL (OpenAI API compatible)"
+                },
+                "codeToClipboard.llm.providers.local.model": {
+                    "type": "string",
+                    "default": "codellama:latest",
+                    "description": "Local LLM model to use"
+                },
+                "codeToClipboard.llm.fallbackProviders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "openai",
+                            "gemini",
+                            "claude",
+                            "local"
+                        ]
+                    },
+                    "default": [
+                        "openai",
+                        "local"
+                    ],
+                    "description": "Fallback providers in order of preference"
+                },
+                "codeToClipboard.llm.timeout": {
+                    "type": "number",
+                    "default": 30000,
+                    "minimum": 5000,
+                    "maximum": 120000,
+                    "description": "Request timeout in milliseconds"
+                },
+                "codeToClipboard.llm.retryAttempts": {
+                    "type": "number",
+                    "default": 2,
+                    "minimum": 0,
+                    "maximum": 5,
+                    "description": "Number of retry attempts for failed requests"
                 }
             }
         },
@@ -141,15 +271,16 @@
         "@types/vscode": "1.101.0",
         "@vscode/test-cli": "0.0.11",
         "@vscode/test-electron": "2.5.2",
+        "@vscode/vsce": "^3.6.0",
         "esbuild": "0.25.6",
         "mocha": "11.7.1",
         "typescript": "5.8.3"
     },
     "dependencies": {
-        "iconv-lite": "0.6.3",
-        "jschardet": "3.1.4",
-        "minimatch": "10.0.3",
         "fast-glob": "3.3.3",
-        "ignore": "5.3.0"
+        "iconv-lite": "0.6.3",
+        "ignore": "5.3.0",
+        "jschardet": "3.1.4",
+        "minimatch": "10.0.3"
     }
 }
