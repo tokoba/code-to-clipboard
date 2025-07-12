@@ -23,20 +23,31 @@ export class LLMConfigurationManager {
   }
 
   private loadConfiguration(): LLMConfiguration {
-    const globalConfig = vscode.workspace.getConfiguration('codeToClipboard.llm');
+    const globalConfig = vscode.workspace.getConfiguration('codeToClipboard');
     
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     const workspaceConfig = workspaceFolder 
-      ? vscode.workspace.getConfiguration('codeToClipboard.llm', workspaceFolder)
+      ? vscode.workspace.getConfiguration('codeToClipboard', workspaceFolder)
       : undefined;
 
+    const provider = workspaceConfig?.get('llm.provider') ?? globalConfig.get('llm.provider') ?? DEFAULT_LLM_CONFIG.provider;
+    
+    // Debug logging
+    console.log('LLM Configuration Debug:');
+    console.log('  Selected provider:', provider);
+    console.log('  Global config llm.provider:', globalConfig.get('llm.provider'));
+    console.log('  Workspace config llm.provider:', workspaceConfig?.get('llm.provider'));
+
     const config: LLMConfiguration = {
-      provider: workspaceConfig?.get('provider') ?? globalConfig.get('provider') ?? DEFAULT_LLM_CONFIG.provider,
+      provider: provider as string,
       providers: this.mergeProviderConfigs(globalConfig, workspaceConfig),
-      fallbackProviders: workspaceConfig?.get('fallbackProviders') ?? globalConfig.get('fallbackProviders') ?? DEFAULT_LLM_CONFIG.fallbackProviders,
-      timeout: workspaceConfig?.get('timeout') ?? globalConfig.get('timeout') ?? DEFAULT_LLM_CONFIG.timeout,
-      retryAttempts: workspaceConfig?.get('retryAttempts') ?? globalConfig.get('retryAttempts') ?? DEFAULT_LLM_CONFIG.retryAttempts
+      fallbackProviders: workspaceConfig?.get('llm.fallbackProviders') ?? globalConfig.get('llm.fallbackProviders') ?? DEFAULT_LLM_CONFIG.fallbackProviders,
+      timeout: workspaceConfig?.get('llm.timeout') ?? globalConfig.get('llm.timeout') ?? DEFAULT_LLM_CONFIG.timeout,
+      retryAttempts: workspaceConfig?.get('llm.retryAttempts') ?? globalConfig.get('llm.retryAttempts') ?? DEFAULT_LLM_CONFIG.retryAttempts
     };
+
+    console.log('  Final config provider:', config.provider);
+    console.log('  Local provider config:', config.providers.local);
 
     return config;
   }
@@ -48,8 +59,8 @@ export class LLMConfigurationManager {
     const mergedProviders = { ...DEFAULT_LLM_CONFIG.providers };
 
     for (const [providerName, defaultConfig] of Object.entries(DEFAULT_LLM_CONFIG.providers)) {
-      const globalProviderConfig = globalConfig.get(`providers.${providerName}`) as any;
-      const workspaceProviderConfig = workspaceConfig?.get(`providers.${providerName}`) as any;
+      const globalProviderConfig = globalConfig.get(`llm.providers.${providerName}`) as any;
+      const workspaceProviderConfig = workspaceConfig?.get(`llm.providers.${providerName}`) as any;
 
       mergedProviders[providerName] = {
         ...defaultConfig,

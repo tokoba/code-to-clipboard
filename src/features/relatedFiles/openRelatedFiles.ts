@@ -3,9 +3,18 @@ import * as path from "node:path"
 import * as vscode from "vscode"
 import { detectAndDecodeFile } from "../common/encoding"
 import { listWorkspaceFiles } from "../common/workspaceFiles"
-import type { OpenAIChatCompletionResponse } from "../types"
+import { LLMConfigurationManager } from "../llm/LLMConfigurationManager"
 
-export async function openRelatedFilesDepth1(resource: vscode.Uri) {
+let llmManager: LLMConfigurationManager | undefined;
+
+function getLLMManager(context: vscode.ExtensionContext): LLMConfigurationManager {
+    if (!llmManager) {
+        llmManager = new LLMConfigurationManager(context);
+    }
+    return llmManager;
+}
+
+export async function openRelatedFilesDepth1(resource: vscode.Uri, context?: vscode.ExtensionContext) {
     await vscode.window.withProgress(
         {
             location: vscode.ProgressLocation.Window,
@@ -14,6 +23,17 @@ export async function openRelatedFilesDepth1(resource: vscode.Uri) {
         },
         async () => {
             try {
+                // Get extension context - this should be passed from the main extension
+                if (!context) {
+                    const extensions = vscode.extensions.all;
+                    const codeToClipboardExt = extensions.find(ext => ext.id.includes('code-to-clipboard'));
+                    if (!codeToClipboardExt) {
+                        vscode.window.showErrorMessage("Extension context not available");
+                        return;
+                    }
+                    // This is a workaround - ideally context should be passed from extension.ts
+                }
+
                 const startFile = resource.fsPath
 
                 const workspaceFolders = vscode.workspace.workspaceFolders
@@ -27,12 +47,24 @@ export async function openRelatedFilesDepth1(resource: vscode.Uri) {
                 const fileUris = await listWorkspaceFiles()
                 const allFiles = fileUris.map((u) => path.relative(rootPath, u.fsPath))
 
-                const apiKey = process.env.OPENAI_API_KEY
-                if (!apiKey) {
+                // Use new LLM configuration manager
+                const manager = getLLMManager(context!);
+                
+                try {
+                    // Refresh configuration to get latest settings
+                    await manager.refreshConfiguration();
+                    
+                    // Validate that we have a working provider
+                    const activeProvider = await manager.getActiveProvider();
+                    vscode.window.showInformationMessage(
+                        `Using LLM provider: ${activeProvider.name}`
+                    );
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
                     vscode.window.showErrorMessage(
-                        "OpenAI API key not set. Set OPENAI_API_KEY env."
-                    )
-                    return
+                        `LLM Configuration Error: ${errorMessage}. Please check your settings.`
+                    );
+                    return;
                 }
 
                 // Read and prepare start file content
@@ -69,32 +101,9 @@ ${startFileContent}
 \`\`\`
 `
 
-                const endpoint = "http://localhost:5130/v1/chat/completions"
-                // const endpoint = "https://api.openai.com/v1/chat/completions"
-                const response = await fetch(endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [
-                            { role: "system", content: "You are a helpful assistant." },
-                            { role: "user", content: prompt },
-                        ],
-                        temperature: 0,
-                    }),
-                })
-
-                if (!response.ok) {
-                    const errorText = await response.text()
-                    vscode.window.showErrorMessage(`OpenAI API error: ${errorText}`)
-                    return
-                }
-
-                const data = (await response.json()) as OpenAIChatCompletionResponse
-                const content: string = data.choices?.[0]?.message?.content || ""
+                // Use the new LLM manager to send request
+                const response = await manager.sendRequest(prompt);
+                const content = response.content;
 
                 const relatedFiles = content
                     .split("\n")
@@ -119,7 +128,7 @@ ${startFileContent}
                 }
 
                 vscode.window.showInformationMessage(
-                    `${existingFiles.length} related files opened.`
+                    `${existingFiles.length} related files opened using ${response.provider} (${response.model}).`
                 )
             } catch (error: unknown) {
                 if (error instanceof Error) {
@@ -130,4 +139,11 @@ ${startFileContent}
             }
         }
     )
+}
+
+// Function to refresh LLM configuration (can be called when settings change)
+export function refreshLLMConfiguration(): void {
+    if (llmManager) {
+        llmManager.refreshConfiguration();
+    }
 }
