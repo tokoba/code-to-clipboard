@@ -131,6 +131,21 @@
                     "default": "codellama:latest",
                     "description": "Local LLM model to use"
                 },
+                "codeToClipboard.llm.providers.local.apiKeySource": {
+                    "type": "string",
+                    "default": "none",
+                    "enum": [
+                        "none",
+                        "environment",
+                        "vscode-secrets"
+                    ],
+                    "description": "Where to get the Local LLM API key from (if required)"
+                },
+                "codeToClipboard.llm.providers.local.apiKeyEnvVar": {
+                    "type": "string",
+                    "default": "LOCAL_LLM_API_KEY",
+                    "description": "Environment variable name for Local LLM API key"
+                },
                 "codeToClipboard.llm.fallbackProviders": {
                     "type": "array",
                     "items": {

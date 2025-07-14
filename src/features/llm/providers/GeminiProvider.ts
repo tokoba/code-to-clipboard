@@ -1,5 +1,6 @@
+import * as vscode from 'vscode';
 import { BaseLLMProvider } from '../base/BaseLLMProvider';
-import type { LLMResponse, RequestOptions } from '../../types/llmConfig';
+import type { LLMResponse, ProviderConfig, RequestOptions } from '../../types/llmConfig';
 
 interface GeminiContent {
   parts: Array<{ text: string }>;
@@ -28,6 +29,14 @@ interface GeminiResponse {
 
 export class GeminiProvider extends BaseLLMProvider {
   name = 'gemini';
+
+  constructor(
+    config: ProviderConfig,
+    context: vscode.ExtensionContext,
+    timeout: number
+  ) {
+    super(config, context, timeout);
+  }
 
   protected buildHeaders(apiKey?: string): Record<string, string> {
     const headers: Record<string, string> = {

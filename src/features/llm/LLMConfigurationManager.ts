@@ -80,16 +80,16 @@ export class LLMConfigurationManager {
 
       switch (providerName) {
         case 'openai':
-          provider = new OpenAIProvider(providerConfig, this.context);
+          provider = new OpenAIProvider(providerConfig, this.context, this.config.timeout);
           break;
         case 'gemini':
-          provider = new GeminiProvider(providerConfig, this.context);
+          provider = new GeminiProvider(providerConfig, this.context, this.config.timeout);
           break;
         case 'claude':
-          provider = new ClaudeProvider(providerConfig, this.context);
+          provider = new ClaudeProvider(providerConfig, this.context, this.config.timeout);
           break;
         case 'local':
-          provider = new LocalLLMProvider(providerConfig, this.context);
+          provider = new LocalLLMProvider(providerConfig, this.context, this.config.timeout);
           break;
         default:
           continue;

@@ -1,5 +1,6 @@
+import * as vscode from 'vscode';
 import { BaseLLMProvider } from '../base/BaseLLMProvider';
-import type { LLMResponse, RequestOptions } from '../../types/llmConfig';
+import type { LLMResponse, ProviderConfig, RequestOptions } from '../../types/llmConfig';
 
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
@@ -28,6 +29,14 @@ interface OpenAIResponse {
 
 export class OpenAIProvider extends BaseLLMProvider {
   name = 'openai';
+
+  constructor(
+    config: ProviderConfig,
+    context: vscode.ExtensionContext,
+    timeout: number
+  ) {
+    super(config, context, timeout);
+  }
 
   async sendRequest(prompt: string, options?: RequestOptions): Promise<LLMResponse> {
     const apiKey = await this.getApiKey();

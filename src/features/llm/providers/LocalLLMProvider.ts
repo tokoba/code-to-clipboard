@@ -1,5 +1,6 @@
+import * as vscode from 'vscode';
 import { BaseLLMProvider } from '../base/BaseLLMProvider';
-import type { LLMResponse, RequestOptions } from '../../types/llmConfig';
+import type { LLMResponse, ProviderConfig, RequestOptions } from '../../types/llmConfig';
 
 interface LocalLLMMessage {
   role: 'system' | 'user' | 'assistant';
@@ -29,14 +30,17 @@ interface LocalLLMResponse {
 export class LocalLLMProvider extends BaseLLMProvider {
   name = 'local';
 
-  protected buildHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      ...this.config.customHeaders
-    };
+  constructor(
+    config: ProviderConfig,
+    context: vscode.ExtensionContext,
+    timeout: number
+  ) {
+    super(config, context, timeout);
   }
 
   async sendRequest(prompt: string, options?: RequestOptions): Promise<LLMResponse> {
+    const apiKey = await this.getApiKey();
+
     const requestBody: LocalLLMRequest = {
       model: this.config.model,
       messages: [
@@ -47,7 +51,7 @@ export class LocalLLMProvider extends BaseLLMProvider {
       max_tokens: options?.maxTokens ?? this.config.maxTokens
     };
 
-    const headers = this.buildHeaders();
+    const headers = this.buildHeaders(apiKey);
     if (options?.customHeaders) {
       Object.assign(headers, options.customHeaders);
     }

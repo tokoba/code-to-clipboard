@@ -3,11 +3,15 @@ import type { LLMProvider, ProviderConfig, ValidationResult, LLMResponse, Reques
 
 export abstract class BaseLLMProvider implements LLMProvider {
   abstract name: string;
+  protected timeout: number;
   
   constructor(
     protected config: ProviderConfig,
-    protected context: vscode.ExtensionContext
-  ) {}
+    protected context: vscode.ExtensionContext,
+    timeout: number
+  ) {
+    this.timeout = timeout;
+  }
 
   async isConfigured(): Promise<boolean> {
     try {
@@ -80,7 +84,7 @@ export abstract class BaseLLMProvider implements LLMProvider {
     }
   ): Promise<Response> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout || 30000);
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
       const response = await fetch(url, {
